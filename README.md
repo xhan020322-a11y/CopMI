@@ -28,7 +28,6 @@ are returned on the same scale supplied by the user.
 
 The included `nhanes_pah` object contains 1,330 participants and six urinary
 PAH variables, with four variables artificially left-censored for illustration.
-It contains only censored data, indicators, and cutoffs—no complete truth.
 
 ```r
 library(CopMI)
