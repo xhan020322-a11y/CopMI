@@ -39,17 +39,34 @@ data("nhanes_pah", package = "CopMI")
 # margin_mode = "normal" when normality after logging is assumed; use
 # "select" otherwise to select a marginal family for each variable by BIC.
 # m is the number of completed data sets; seed makes the draws reproducible.
+# max_iter is the maximum number of EM iterations; tol is the convergence
+# tolerance for changes in the copula correlation matrix.
 fit <- copula_em_impute(
   nhanes_pah,
   input_scale = "log",
   margin_mode = "normal",
   m = 3,
-  seed = 2026
+  seed = 2026,
+  max_iter = 100,
+  tol = 1e-4
 )
 
+# View a concise summary of the fitted imputation model.
 summary(fit)
+
+# Extract one completed matrix, all completed matrices, or stacked long data.
 completed_1 <- CopMI::complete(fit, action = 1)
+completed_all <- CopMI::complete(fit, action = "all")
+completed_long <- CopMI::complete(fit, action = "long")
+dim(completed_1)
+length(completed_all)
+head(completed_long)
+
+# Inspect convergence and the fitted copula correlation matrix.
 fit_diagnostics <- CopMI::diagnostics(fit)
+fit_diagnostics$converged
+fit_diagnostics$n_iter
+fit_diagnostics$Sigma_hat
 ```
 
 If log-transformed normality is not assumed, use marginal selection:
@@ -60,22 +77,32 @@ fit_selected <- copula_em_impute(
   input_scale = "log",
   margin_mode = "select",
   m = 3,
-  seed = 2026
+  seed = 2026,
+  max_iter = 100,
+  tol = 1e-4
 )
+
+# View the selected marginal family for each variable and their BIC values.
+selected_diagnostics <- CopMI::diagnostics(fit_selected)
+selected_diagnostics$family_selected
+selected_diagnostics$bic_table
 
 completed_selected <- CopMI::complete(fit_selected, action = 1)
 ```
 
 ## Help
 
-After installation, these commands open the main-function help, data help,
-detailed tutorial, and complete runnable example scripts:
+After installation, R help pages describe function arguments and return values;
+the vignette is a detailed tutorial, and the package also provides four complete
+runnable scripts:
 
 ```r
-?copula_em_impute                              # Function arguments and outputs
+?copula_em_impute                              # Main imputation function
+?complete                                      # Extract completed data sets
+?diagnostics                                   # Inspect model diagnostics
 ?nhanes_pah                                    # Example-data structure
 vignette("copmi-workflow", package = "CopMI") # Detailed tutorial
-system.file("examples", package = "CopMI")    # Four runnable R scripts
+system.file("examples", package = "CopMI")    # Location of runnable scripts
 ```
 
 The package includes separate functions for data validation, marginal fitting,
