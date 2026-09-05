@@ -1,14 +1,7 @@
 # CopMI
 
 CopMI performs Gaussian-copula EM multiple imputation for multivariate
-left-censored continuous data. It supports two marginal strategies:
-
-- `margin_mode = "normal"`: assume each variable is normal after natural-log
-  transformation.
-- `margin_mode = "select"`: select a marginal family for each variable by BIC.
-
-Marginal optimization uses L-BFGS-B first and retries the same likelihood with
-Nelder-Mead if needed. Version: **0.1.0**.
+left-censored continuous data. Version: **0.1.0**.
 
 ## Installation
 
@@ -31,7 +24,7 @@ Use `input_scale = "log"` when values and cutoffs are already natural-logged.
 Use `input_scale = "raw"` for positive original-scale values; completed data
 are returned on the same scale supplied by the user.
 
-## Quick example
+## Example
 
 The included `nhanes_pah` object contains 1,330 participants and six urinary
 PAH variables, with four variables artificially left-censored for illustration.
@@ -41,11 +34,16 @@ It contains only censored data, indicators, and cutoffs—no complete truth.
 library(CopMI)
 data("nhanes_pah", package = "CopMI")
 
+# Parameter choices:
+# input_scale = "log" for already natural-logged data; use "raw" for
+# positive original-scale data.
+# margin_mode = "normal" when normality after logging is assumed; use
+# "select" otherwise to select a marginal family for each variable by BIC.
+# m is the number of completed data sets; seed makes the draws reproducible.
 fit <- copula_em_impute(
   nhanes_pah,
   input_scale = "log",
   margin_mode = "normal",
-  optim_methods = c("L-BFGS-B", "Nelder-Mead"),
   m = 3,
   seed = 2026
 )
@@ -69,15 +67,16 @@ fit_selected <- copula_em_impute(
 completed_selected <- CopMI::complete(fit_selected, action = 1)
 ```
 
-## Documentation and examples
+## Help
+
+After installation, these commands open the main-function help, data help,
+detailed tutorial, and complete runnable example scripts:
 
 ```r
-?copula_em_impute
-?nhanes_pah
-vignette("copmi-workflow", package = "CopMI")
-
-list.files(system.file("examples", package = "CopMI"))
-source(system.file("examples", "01_quick_start.R", package = "CopMI"))
+?copula_em_impute                              # Function arguments and outputs
+?nhanes_pah                                    # Example-data structure
+vignette("copmi-workflow", package = "CopMI") # Detailed tutorial
+system.file("examples", package = "CopMI")    # Four runnable R scripts
 ```
 
 The package includes separate functions for data validation, marginal fitting,
