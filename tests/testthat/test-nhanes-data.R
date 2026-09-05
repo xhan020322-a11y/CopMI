@@ -1,0 +1,22 @@
+test_that("shipped NHANES data and CSV describe the same censored observations", {
+  d <- nhanes_pah
+  table <- read.csv(system.file('extdata', 'nhanes_pah_censored.csv', package = 'CopMI'))
+  meta <- read.csv(system.file('extdata', 'nhanes_pah_metadata.csv', package = 'CopMI'))
+  x <- as.matrix(table[meta$variable])
+  ind <- as.matrix(table[paste0(meta$variable, '_ind')])
+  dimnames(x) <- dimnames(ind) <- list(as.character(table$SEQN), meta$variable)
+  rebuilt <- make_lod_data(log(x), ind, log(meta$cutoff_raw), scale = 'log')
+  expect_identical(names(d), c('X_cens', 'ind', 'cutoffs', 'scale'))
+  expect_equal(dim(d$X_cens), c(1330L, 6L))
+  expect_equal(rebuilt, d, tolerance = 1e-12)
+  expect_identical(is.na(x), d$ind == 0L)
+  expect_identical(rownames(d$ind), as.character(table$SEQN))
+  expect_equal(unname(colSums(d$ind == 0L)), c(133, 0, 396, 265, 529, 0))
+  expect_equal(unname(colSums(d$ind == 0L)), meta$censored_n)
+  expect_equal(unname(colMeans(d$ind == 0L)), meta$censored_proportion)
+  limits <- matrix(d$cutoffs, nrow(d$X_cens), ncol(d$X_cens), byrow = TRUE)
+  expect_equal(d$X_cens[d$ind == 0L], limits[d$ind == 0L])
+  # Values tied at URXP03's threshold remain observed.
+  expect_true(any(x[, 'URXP03'] == 43, na.rm = TRUE))
+  expect_true(all(d$ind[which(x[, 'URXP03'] == 43), 'URXP03'] == 1L))
+})

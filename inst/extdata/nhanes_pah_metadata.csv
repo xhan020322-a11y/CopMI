@@ -1,0 +1,7 @@
+"variable","description","raw_unit","cutoff_raw","cutoff_log","target_proportion","censored_n","censored_proportion"
+"URXP01","1-Hydroxynaphthalene","ng/L",346.9,5.8490365539757,0.1,133,0.1
+"URXP02","2-Hydroxynaphthalene","ng/L",NA,NA,0,0,0
+"URXP03","3-Hydroxyfluorene","ng/L",43,3.76120011569356,0.3,396,0.297744360902256
+"URXP04","2-Hydroxyfluorene","ng/L",80,4.38202663467388,0.2,265,0.199248120300752
+"URXP06","1-Hydroxyphenanthrene","ng/L",87,4.46590811865458,0.4,529,0.397744360902256
+"URXP25","2 & 3-Hydroxyphenanthrene","ng/L",NA,NA,0,0,0

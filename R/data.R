@@ -1,0 +1,59 @@
+#' NHANES PAH data with illustrative left censoring
+#'
+#' Six urinary PAH metabolites from 1,330 NHANES 2015-2016 participants in the
+#' manuscript's complete-case sample. Concentrations are real; the censoring is
+#' artificial and fixed for teaching. It does not represent laboratory detection
+#' limits or a particular replicate of the manuscript's evaluation.
+#'
+#' @format A `copmi_lod_data` list with four components:
+#' \describe{
+#'   \item{X_cens}{1330 by 6 double matrix of natural-log concentrations.
+#'     Row names are public NHANES SEQN identifiers. Column names are URXP01,
+#'     URXP02, URXP03, URXP04, URXP06 and URXP25. Censored entries hold log(LOD)
+#'     placeholders, not their original or imputed values.}
+#'   \item{ind}{1330 by 6 integer censoring-index matrix, with matching names:
+#'     1 = observed, 0 = left-censored.}
+#'   \item{cutoffs}{Six log-scale cutoffs in column order. URXP01 has log(346.9),
+#'     URXP03 has log(43), URXP04 log(80), URXP06 log(87); the two fully
+#'     observed columns have NA cutoffs.}
+#'   \item{scale}{The label `"log"`. Supply `input_scale = "log"` when fitting.}
+#' }
+#' @details The sample has age at least 20, nine valid PHQ-9 items, complete
+#'   demographic/clinical covariates and six positive, originally detected PAH
+#'   concentrations. No covariates or complete exposure truth are distributed.
+#'
+#'   The illustrative thresholds are the 10th, 30th, 20th and 40th percentiles
+#'   of URXP01, URXP03, URXP04 and URXP06, respectively, computed on raw
+#'   concentrations with R quantile type 7.
+#'   Values strictly below the thresholds are censored; ties remain observed.
+#'   Counts in column order are 133, 0, 396, 265, 529, 0. The four actual
+#'   proportions are 10, 29.77, 19.92 and 39.77 percent, respectively.
+#'   These thresholds are artificial, not CDC laboratory LODs. The example does
+#'   not establish log-normality; `margin_mode = "normal"` is a user assumption.
+#'
+#'   Two installed CSV files are available in `system.file("extdata", package =
+#'   "CopMI")`. `nhanes_pah_censored.csv` contains SEQN, six raw concentrations
+#'   in ng/L (NA in censored cells), and six `_ind` columns with the same 0/1
+#'   convention. `nhanes_pah_metadata.csv` contains names, units, thresholds and
+#'   censoring counts. Neither contains censored true values. No data generator
+#'   or censoring-generation code is included in the package.
+#'
+#'   Source: CDC/NCHS. Original public-use files are freely available from NHANES.
+#'   This derived example is not endorsed by CDC, HHS or the US Government.
+#'   It illustrates imputation, not a survey-weighted population analysis.
+#' @source CDC/NCHS, NHANES 2015-2016, PAH_I linked to DEMO_I, DPQ_I, BMX_I and
+#'   ALB_CR_I. See \url{https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2015/DataFiles/PAH_I.htm}
+#'   and \url{https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/default.aspx?BeginYear=2015}.
+#' @usage data(nhanes_pah)
+#' @examples
+#' data(nhanes_pah)
+#' dim(nhanes_pah$X_cens)
+#' colSums(nhanes_pah$ind == 0L)
+#' head(nhanes_pah$ind)
+#' # A separate 1 = censored index, if needed by another interface:
+#' censor_index <- 1L - nhanes_pah$ind
+#' colSums(censor_index)
+#' csv <- read.csv(system.file("extdata", "nhanes_pah_censored.csv",
+#'                             package = "CopMI"))
+#' head(csv)
+"nhanes_pah"

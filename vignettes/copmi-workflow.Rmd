@@ -1,0 +1,220 @@
+---
+title: "CopMI: scales, assumptions, staged fitting, and diagnostics"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{CopMI: scales, assumptions, staged fitting, and diagnostics}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+library(CopMI)
+```
+
+## NHANES example data
+
+`nhanes_pah` contains six urinary PAH metabolites from the manuscript's 1,330
+NHANES 2015-2016 participants. The concentrations are real and the censoring is
+artificial, fixed for this teaching example. URXP01 is censored below 346.9 ng/L
+(133 values, 10%); URXP03 below 43 ng/L (396 values, 29.77%); URXP04 below
+80 ng/L (265 values, 19.92%); and URXP06 below 87 ng/L (529 values, 39.77%).
+URXP02 and URXP25 remain observed. These are illustrative thresholds, not laboratory
+LODs or a particular evaluation replicate. This example does not establish
+normality after logging.
+
+The packaged R object is already on the natural-log scale. Its `ind` matrix uses
+**0 = censored, 1 = observed**; `X_cens` stores log(LOD) placeholders in censored
+cells. Raw-scale CSV data with NA in censored cells and matching `_ind` columns
+are installed under `system.file("extdata", package = "CopMI")`, together with a
+variable/threshold table. See `?nhanes_pah`. Neither complete exposure truth nor
+data-generation/censoring-generation code is shipped.
+
+Source: CDC/NCHS, [NHANES 2015-2016 PAH_I](https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2015/DataFiles/PAH_I.htm),
+linked to DEMO_I, DPQ_I, BMX_I and ALB_CR_I for cohort selection. Original public
+files are freely available from NHANES. This derived example is not endorsed by
+CDC, HHS or the US Government. Examples illustrate imputation and do not perform
+survey-weighted population inference.
+
+## State the modelling assumption explicitly
+
+CopMI separates the supplied data scale from the marginal-distribution choice.
+Use `input_scale = "raw"` to log positive raw values internally, or `"log"` for
+values already logged. Use `margin_mode = "normal"` to assume normal margins on
+the log scale. Use `"select"` (alias `"sd_shift"`) for BIC selection after an
+SD-based shift. The method does not run a normality test to choose this setting.
+
+```{r input}
+data(nhanes_pah)
+dat <- make_lod_data(nhanes_pah$X_cens,
+                     nhanes_pah$ind, nhanes_pah$cutoffs)
+dat
+colMeans(dat$ind == 0L)
+```
+
+The indicators define censoring: `1` observed and `0` left-censored. Censored
+cells may initially contain `NA`; the constructor replaces them with cutoffs.
+The data require one finite cutoff per censored column and at least two
+observed values per margin, with variation required except for exponential margins for fitting. An observed value below its
+cutoff is rejected. No complete exposure truth is included in the package.
+
+## Run the complete normal-margin workflow
+
+```{r full}
+fit <- copula_em_impute(dat, margin_mode = "normal", input_scale = "log",
+                         m = 2, max_iter = 100, seed = 42)
+summary(fit)
+head(CopMI::complete(fit, 1))
+```
+
+Inspect `converged`; reaching a chosen iteration limit does not imply
+convergence. The flag means that the maximum absolute change in the correlation
+matrix fell below `tol`. It does not certify a global likelihood optimum.
+
+## Reproduce the result step by step
+
+```{r stages}
+margins <- copmi_fit_margins(dat, margin_mode = "normal", input_scale = "log")
+margins$fits[[1]]$parameters
+margins$candidate_table
+latent <- copmi_transform(margins)
+head(latent$Z)
+latent$z_lod
+model <- copmi_fit_copula(latent, max_iter = 100, seed = 42)
+model$Sigma_hat
+model$em_change_history
+staged <- copmi_impute(model, m = 2)
+stopifnot(identical(CopMI::complete(staged), CopMI::complete(fit)))
+```
+
+`copmi_fit_copula()` estimates the model without drawing completed matrices.
+`copmi_impute()` can reuse the fitted model without repeating marginal fitting or
+EM. Its default seed continues the stored fitting RNG state; a different integer
+seed requests a new run of the conditional sampler. Explicitly seeded calls
+restore the caller's random-number state.
+
+## Select heterogeneous margins
+
+The original default candidate set contains 11 families. Here a short candidate
+list makes the decision table easier to inspect.
+
+```{r selection}
+selected <- copmi_fit_margins(dat, margin_mode = "select",
+                              margin_candidates = c("norm", "logis", "lnorm"))
+selected$family_selected
+selected$candidate_table
+selected$shift$anchor
+```
+
+For each variable the shift is `anchor = cutoff - shift_k * observed_sd`,
+with the minimum observed value as the reference if the cutoff is absent. The
+working values equal logged input minus the anchor. Marginal parameters in this
+mode refer to that shifted scale, not the original exposure scale. Positive-support
+selected families imply values above the anchor. Selected normal and logistic
+families retain real support; their values are not forcibly made positive.
+
+To inspect one margin independently:
+
+```{r single}
+single <- copmi_fit_margin(dat$X_cens[, 1], dat$ind[, 1], dat$cutoffs[1],
+                           candidates = "norm")
+single$parameters
+single$bic
+```
+
+This lower-level single-column function fits exactly the scale provided to it;
+it does not perform logging or shifting. For automatic scale handling use
+`copmi_fit_margins()` or `copula_em_impute()`.
+
+## L-BFGS-B first, Nelder-Mead as Plan B
+
+For each family-specific start, the default order is
+`optim_methods = c("L-BFGS-B", "Nelder-Mead")`. A successful finite converged
+primary fit does not run the backup. An error, nonconvergence, or invalid fit
+activates Nelder-Mead on the same left-censored likelihood and
+log-transformed positive parameters, without empirical upper bounds. Candidate selection only uses successfully fitted candidates.
+
+```{r optimizer}
+single$optimization
+backup_only <- copmi_fit_margin(dat$X_cens[, 1], dat$ind[, 1], dat$cutoffs[1],
+                                candidates = "norm", optim_methods = "Nelder-Mead")
+backup_only$optimizer
+backup_only$parameters
+```
+
+The second example explicitly requests the backup optimizer to illustrate its
+output; it is not evidence of a naturally occurring primary failure. Automated
+tests also force primary failures and verify that the retry really occurs.
+
+## Raw-scale input and output
+
+```{r raw}
+table <- read.csv(system.file("extdata", "nhanes_pah_censored.csv", package = "CopMI"))
+meta <- read.csv(system.file("extdata", "nhanes_pah_metadata.csv", package = "CopMI"))
+X <- as.matrix(table[meta$variable])
+ind <- as.matrix(table[paste0(meta$variable, "_ind")])
+dimnames(X) <- dimnames(ind) <- list(as.character(table$SEQN), meta$variable)
+raw <- make_lod_data(X, ind, meta$cutoff_raw, scale = "raw")
+raw_fit <- copula_em_impute(raw, input_scale = "raw", margin_mode = "normal",
+                            m = 1, max_iter = 100, seed = 42)
+raw_completed <- CopMI::complete(raw_fit, 1)
+head(raw_completed)
+stopifnot(identical(raw_completed[raw$ind == 1L], raw$X_cens[raw$ind == 1L]))
+cutoff_matrix <- matrix(raw$cutoffs, nrow(raw_completed), ncol(raw_completed),
+                        byrow = TRUE)
+stopifnot(all(raw_completed[raw$ind == 0L] < cutoff_matrix[raw$ind == 0L]))
+```
+
+Never log the data without also logging its cutoffs. Do not request `"raw"` for
+values already logged. CopMI uses natural log, so already transformed inputs
+should use the same convention when the intended assumption is log-normality.
+
+## Extract data and inspect diagnostics
+
+```{r extract}
+length(CopMI::complete(fit, "all"))
+dim(CopMI::complete(fit, "mean"))
+head(CopMI::complete(fit, "long"))
+dx <- diagnostics(fit)
+dx$converged
+dx$optimization
+dx$init_diagnostics$pair_results
+dx$fallback_records
+```
+
+The fallback table distinguishes optimization retries, candidate failures,
+initial-pair optimizer retries and initial-matrix positive-definite projection.
+E-step, sampling, and inverse-transformation failures stop with an error; they
+do not produce approximate or fixed-value replacements. Counts represent events;
+multiple events can concern the same sample or variable. Empty tables mean no
+events of that type were recorded.
+
+## Unconverged models
+
+By default, imputation stops if EM has not converged. Refit with a larger
+`max_iter` and inspect the iteration history. A deliberately exploratory run
+can use `allow_unconverged = TRUE`; its convergence flag remains false.
+
+```{r exploratory}
+initial <- copmi_fit_copula(latent, max_iter = 0, seed = 42)
+exploratory <- copmi_impute(initial, m = 1, allow_unconverged = TRUE)
+exploratory$converged
+```
+
+## Interpretation and development
+
+The current implementation generates conditional imputations at fixed estimated
+margin parameters and correlation. It does not draw parameter uncertainty or
+family-selection uncertainty. The Gibbs sampler starts inside the truncation region; assess
+sampler mixing, sensitivity, and inferential performance for
+your application. `complete(fit, "mean")` is a descriptive average, not an
+analysis that propagates between-imputation uncertainty. Downstream model
+fitting and pooling are outside this package's current scope.
+
+Run `?copula_em_impute` or `?copmi_fit_margin` for complete contracts. All public
+functions include executable examples. The source has separate validation,
+marginal-fitting, transformation, EM, sampling, and extraction modules. Run
+`roxygen2::roxygenise()`, `testthat::test_local()`, `R CMD build`, and
+`R CMD check --as-cran` when changing it.

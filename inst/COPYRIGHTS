@@ -1,0 +1,15 @@
+Source data: CDC/NCHS, National Health and Nutrition Examination Survey,
+2015-2016 public-use PAH_I, DEMO_I, DPQ_I, BMX_I and ALB_CR_I data files.
+Original files are available without charge from:
+https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/default.aspx?BeginYear=2015
+
+nhanes_pah is a clearly identified derived teaching dataset: a selected cohort,
+six selected exposures and fixed artificial left censoring. It is not the
+original NHANES data release. Censored true concentrations are not included.
+The prepared R object is natural-logged; the CSV contains raw-scale observed
+values and NA for artificially censored entries.
+
+The source data are US federal government public-use data. The package code is
+licensed under MIT; no exclusive copyright is claimed over the source data.
+Use of these materials does not imply endorsement by CDC, HHS or the United
+States Government. See https://www.cdc.gov/other/agencymaterials.html.

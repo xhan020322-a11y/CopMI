@@ -1,0 +1,22 @@
+Package: CopMI
+Type: Package
+Title: Gaussian Copula EM Multiple Imputation for Left-Censored Exposures
+Version: 0.1.0
+Authors@R: person("Xuan", "Han", email = "1571836967@qq.com",
+    role = c("aut", "cre"))
+Description: Fits censored marginal distributions and a latent Gaussian
+    copula correlation model to multivariate left-censored exposure data.
+    Provides separate interfaces for data validation, scale shifting, marginal
+    fitting, latent transformation, expectation-maximization estimation,
+    conditional imputation, and diagnostic extraction. Completed matrices are
+    returned on the supplied analysis scale with observed values preserved.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Depends: R (>= 4.1.0)
+Imports: Matrix, mvtnorm, statmod, stats, tmvtnorm, utils
+Suggests: testthat (>= 3.0.0), knitr, rmarkdown
+VignetteBuilder: knitr
+Roxygen: list(markdown = TRUE)
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.0.0
