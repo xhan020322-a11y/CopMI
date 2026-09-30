@@ -6,26 +6,10 @@
 \alias{CopMI-package}
 \title{CopMI: Gaussian copula imputation for left-censored exposures}
 \description{
-Use \code{\link[=copula_em_impute]{copula_em_impute()}} for the complete workflow or call
-\code{\link[=make_lod_data]{make_lod_data()}}, \code{\link[=copmi_fit_margins]{copmi_fit_margins()}}, \code{\link[=copmi_transform]{copmi_transform()}},
-\code{\link[=copmi_fit_copula]{copmi_fit_copula()}}, and \code{\link[=copmi_impute]{copmi_impute()}} separately. Use \code{\link[=complete]{complete()}} to
-extract data and \code{\link[=diagnostics]{diagnostics()}} to inspect convergence and optimizer retries.
+Use \code{\link[=copula_em_impute]{copula_em_impute()}} for multiple imputation,
+\code{\link[=complete]{complete()}} to extract completed data, and
+\code{\link[=diagnostics]{diagnostics()}} to inspect model diagnostics.
 }
-\section{Modelling choices}{
-
-\code{input_scale} states whether exposures are raw positive values or already
-logged. \code{margin_mode = "normal"} assumes normal margins on the log scale;
-\code{"sd_shift"} (alias \code{"select"}) uses BIC selection after an SD shift.
-The default optimizer order is L-BFGS-B then Nelder-Mead on log-transformed positive parameters.
-}
-
-\section{Scope}{
-
-The implementation conditions imputations on estimated margins and copula
-correlation. It does not sample model-parameter uncertainty or pool downstream
-regression analyses. It supports left censoring with one cutoff per column.
-}
-
 \seealso{
 \link{nhanes_pah}, \code{vignette("copmi-workflow", package = "CopMI")}
 }

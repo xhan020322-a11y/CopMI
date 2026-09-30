@@ -74,8 +74,7 @@ finite cutoffs. Imputations are returned on this supplied scale.}
 \code{"L-BFGS-B"}, then \code{"Nelder-Mead"} on error, nonconvergence, or invalid
 estimates/log-likelihood/BIC. Both optimize the same left-censored
 likelihood on log-transformed positive parameters, without empirical
-parameter bounds. Location parameters remain unconstrained. A single
-method can be supplied for controlled comparisons.}
+parameter bounds. Location parameters remain unconstrained.}
 
 \item{allow_unconverged}{Allow exploratory draws from an unconverged or
 initialization-only fit. Defaults to \code{FALSE}; \code{converged} remains \code{FALSE}.}
@@ -102,8 +101,7 @@ silently decides the mode. Both modes use the ordered \code{optim_methods}.
 
 Separate calls to \code{\link[=copmi_fit_margins]{copmi_fit_margins()}}, \code{\link[=copmi_transform]{copmi_transform()}},
 \code{\link[=copmi_fit_copula]{copmi_fit_copula()}} with the same seed, and \code{\link[=copmi_impute]{copmi_impute()}} with its
-default seed reproduce the one-call result. \code{max_iter = 0} is available
-for initialization-only diagnostics, not a converged EM fit.
+default seed reproduce the one-call result.
 }
 \examples{
 # Use the first 100 rows for a quick help example; full data have 1330 rows.

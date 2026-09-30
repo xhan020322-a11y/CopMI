@@ -48,15 +48,6 @@ the retained-sweep vector and traces are empty.
 \description{
 Extract fitting, optimization, and imputation diagnostics
 }
-\details{
-A successful Nelder-Mead retry remains visible in \code{optimization}
-even if the final fit converges. The fallback table records marginal and initial-pair optimizer
-retries, failed marginal candidates, and initial-matrix projection. EM or
-sampling failures raise errors; they do not produce replacement values. Consult the per-attempt \code{message} and \code{warnings}
-columns when diagnosing a failed candidate.
-\code{converged} describes EM convergence. \code{sampling$completed} only records
-completion of the requested draws, not evidence of Gibbs convergence.
-}
 \examples{
 # Use the first 100 rows for a quick help example; full data have 1330 rows.
 dat <- make_lod_data(nhanes_pah$X_cens[1:100, ],

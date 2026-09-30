@@ -45,28 +45,10 @@ Sample censored latent values conditional on observed values, invert the
 fitted marginal transforms, and return completed data on the input scale.
 }
 \details{
-Observed values and dimension names are preserved. Censored values
-must be finite and strictly below their cutoff. Moment, sampling, or inverse
-transformation failures raise errors; no fixed-value replacement is used.
-A failed positive-support quantile can be recovered by solving the same
-log-CDF equation, without changing its probability or drawing again.
-Cutoff equality or overshoot within floating-point tolerance is moved
-just below the cutoff and counted in the numerical diagnostics.
-Before undoing an SD shift, each column is checked against the support
-of its selected family. Normal and logistic values may be negative or
-zero; all other candidates require strictly positive values. Every
-censored value must be below its cutoff on that scale. Returning to
-the log-analysis scale can yield negative values for either group;
-original-scale output requested with \code{input_scale = "raw"} is positive.
-Marginal parameters and
-correlations are held fixed across draws; parameter and family-selection
-uncertainty is not sampled. A systematic-scan Gibbs chain starts inside
-the truncation region and persists across all completed data sets. Each
-sweep updates every censored latent coordinate once. With \code{m = 5} and the
-default controls, retained sweeps are 250, 300, 350, 400, and 450.
-Conditional covariance matrices must be positive definite; no ridge is added.
-Completion of the requested sweeps does not establish sampler convergence;
-assess mixing and sensitivity to the burn-in and retention interval.
+Observed values are preserved, and completed data are returned
+on the input scale. Imputed values are strictly below their cutoffs.
+With m = 5 and the default controls, draws are retained at sweeps
+250, 300, 350, 400, and 450.
 }
 \examples{
 # Use the first 100 rows for a quick help example; full data have 1330 rows.

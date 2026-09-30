@@ -26,8 +26,7 @@ copmi_fit_margin(
 \code{"L-BFGS-B"}, then \code{"Nelder-Mead"} on error, nonconvergence, or invalid
 estimates/log-likelihood/BIC. Both optimize the same left-censored
 likelihood on log-transformed positive parameters, without empirical
-parameter bounds. Location parameters remain unconstrained. A single
-method can be supplied for controlled comparisons.}
+parameter bounds. Location parameters remain unconstrained.}
 }
 \value{
 A \code{copmi_margin} list containing \code{family}, \code{parameters} (named numeric

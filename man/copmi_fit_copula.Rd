@@ -44,16 +44,6 @@ object), \code{rng_state} (state after estimation for reproducible draws),
 \description{
 Estimate pairwise censored-normal correlations for initialization, then
 update the latent correlation matrix by EM using truncated-normal moments.
-This step estimates the correlation model without drawing completed data.
-}
-\details{
-Convergence refers only to the correlation-change criterion, not
-convergence of the marginal optimizers or proof of a global optimum.
-An indefinite finite pairwise initial matrix is projected with
-\code{\link[Matrix:nearPD]{Matrix::nearPD()}}; its adjustment is recorded as \code{init_diagnostics$pd_adjustment}.
-EM updates are not projected. Moment or linear-algebra failures raise errors
-rather than replacing moments or adding a ridge. Unconverged fits can be
-inspected but require explicit opt-in before imputation.
 }
 \examples{
 # Use the first 100 rows for a quick help example; full data have 1330 rows.

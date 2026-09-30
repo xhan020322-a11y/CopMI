@@ -26,12 +26,6 @@ a data frame with \code{n * m} rows and columns \code{.imp} (1 through \code{m})
 \description{
 Extract completed data from a CopMI result
 }
-\details{
-The mean completion is a descriptive convenience. An analysis of
-this average does not propagate between-imputation uncertainty. CopMI does
-not pool downstream model estimates or standard errors. Use
-\code{CopMI::complete()} if another package defines a function named \code{complete}.
-}
 \examples{
 # Use the first 100 rows for a quick help example; full data have 1330 rows.
 dat <- make_lod_data(nhanes_pah$X_cens[1:100, ],
