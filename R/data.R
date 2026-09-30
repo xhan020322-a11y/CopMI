@@ -50,10 +50,4 @@
 #' dim(nhanes_pah$X_cens)
 #' colSums(nhanes_pah$ind == 0L)
 #' head(nhanes_pah$ind)
-#' # A separate 1 = censored index, if needed by another interface:
-#' censor_index <- 1L - nhanes_pah$ind
-#' colSums(censor_index)
-#' csv <- read.csv(system.file("extdata", "nhanes_pah_censored.csv",
-#'                             package = "CopMI"))
-#' head(csv)
 "nhanes_pah"
