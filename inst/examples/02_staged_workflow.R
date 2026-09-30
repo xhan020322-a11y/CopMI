@@ -42,11 +42,12 @@ print(model$converged)
 print(model$n_iter)
 print(model$em_change_history)
 
-# Step 4: draw three completed data sets on the original log input scale.
+# Step 4: draw five completed data sets on the original log input scale.
 # With seed omitted, sampling continues the random state saved in model.
-fit_selected <- copmi_impute(model, m = 3)
+fit_selected <- copmi_impute(model, m = 5, gibbs_burn = 200, gibbs_thin = 50)
 print(summary(fit_selected))
 completed_selected <- CopMI::complete(fit_selected, action = 1)
 print(head(completed_selected, 3))
 selected_diagnostics <- CopMI::diagnostics(fit_selected)
 print(selected_diagnostics$fallback_records)
+print(selected_diagnostics$sampling$kept_sweeps)

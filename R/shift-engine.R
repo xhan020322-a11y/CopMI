@@ -53,7 +53,7 @@ make_log_sd_shift_dat <- function(dat, shift_k = 3) {
   shift_dat <- dat
   shift_dat$X_cens <- X_shift_cens
   shift_dat$cutoffs <- as.numeric(LOD_shift)
-  shift_dat$sd_shift <- list(
+  shift_info <- list(
     anchor = anchor,
     sd = sd_est$sd,
     sd_source = sd_est$source,
@@ -62,15 +62,7 @@ make_log_sd_shift_dat <- function(dat, shift_k = 3) {
     original_cutoffs = LOD_log,
     shifted_cutoffs = as.numeric(LOD_shift)
   )
+  shift_dat$sd_shift <- shift_info
   
-  list(
-    dat = shift_dat,
-    anchor = anchor,
-    sd = sd_est$sd,
-    sd_source = sd_est$source,
-    shift_multiplier = shift_k,
-    min_shifted_observed_or_cutoff = min_shifted_observed_or_cutoff,
-    original_cutoffs = LOD_log,
-    shifted_cutoffs = as.numeric(LOD_shift)
-  )
+  c(list(dat = shift_dat), shift_info)
 }

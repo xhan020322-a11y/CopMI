@@ -29,10 +29,21 @@ A named list. For imputation results: \code{converged}, \code{n_iter},
 \code{Sigma_hat}, \code{Sigma_init}, \code{em_change_history}, \code{family_selected},
 \code{bic_table}, \code{candidate_table}, \code{optimization}, \code{fallback_records},
 \code{init_diagnostics}, \code{shift_anchor}, \code{shift_sd}, \code{shift_sd_source},
-\code{input_scale}, and \code{sampling}. The fallback table has columns \code{method},
+\code{input_scale}, \code{sampling}, \code{inverse_diagnostics}, and
+\code{moment_asymmetry_history}. The last field records the maximum relative
+asymmetry of the integrated moment covariance per EM iteration; it is
+not an integration-error bound. Numerical diagnostics count quantile
+root solves and floating-point boundary adjustments.
+The fallback table has columns \code{method},
 \code{stage}, \code{count}, and \code{detail}; \code{count} counts events, not necessarily
 distinct rows or variables. Marginal objects return the relevant candidate
 and optimization tables; copula objects return correlation and EM details.
+\code{sampling} contains \code{scan}, \code{burn_in}, \code{thin}, \code{completed}, \code{total_sweeps},
+\code{kept_sweeps}, \code{n_patterns}, \code{n_rows_with_censoring}, \code{n_censored_latent},
+\code{n_scalar_updates}, \code{trace_mean_censored_z}, \code{trace_mean_abs_update}, and
+\code{seed}. The two traces contain one value per sweep. With no censored cells,
+completed matrices equal the input, the actual sweep count is zero, and
+the retained-sweep vector and traces are empty.
 }
 \description{
 Extract fitting, optimization, and imputation diagnostics
@@ -43,6 +54,8 @@ even if the final fit converges. The fallback table records marginal and initial
 retries, failed marginal candidates, and initial-matrix projection. EM or
 sampling failures raise errors; they do not produce replacement values. Consult the per-attempt \code{message} and \code{warnings}
 columns when diagnosing a failed candidate.
+\code{converged} describes EM convergence. \code{sampling$completed} only records
+completion of the requested draws, not evidence of Gibbs convergence.
 }
 \examples{
 # Use the first 100 rows for a quick help example; full data have 1330 rows.

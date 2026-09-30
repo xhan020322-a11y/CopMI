@@ -8,7 +8,7 @@
 }
 
 .distribution <- function(family) {
-  switch(family,
+  dist <- switch(family,
     norm = list(d = stats::dnorm, p = stats::pnorm, q = stats::qnorm),
     logis = list(d = stats::dlogis, p = stats::plogis, q = stats::qlogis),
     lnorm = list(d = stats::dlnorm, p = stats::plnorm, q = stats::qlnorm),
@@ -22,6 +22,8 @@
     burr = list(d = dburr, p = pburr, q = qburr),
     stop("Unsupported distribution: ", family, call. = FALSE)
   )
+  dist$positive <- !family %in% c("norm", "logis")
+  dist
 }
 
 .empty_optimization <- function() {

@@ -2,7 +2,7 @@
 # A positive family rejects incompatible observations instead of clipping them.
 .margin_starts <- function(obs, cutoff, has_censored, family) {
   if (length(obs) < 2L) stop("At least two observed values are required.", call. = FALSE)
-  if (!family %in% c("norm", "logis") &&
+  if (.distribution(family)$positive &&
       (any(obs <= 0) || (has_censored && cutoff <= 0))) {
     stop("Positive-support margins require positive observations and a positive cutoff.", call. = FALSE)
   }

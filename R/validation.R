@@ -14,6 +14,17 @@
   invisible(x)
 }
 
+# Validate the retained-draw schedule before fitting or allocating a chain.
+.check_gibbs_control <- function(m, gibbs_burn, gibbs_thin) {
+  .check_number(m, "m", 1, .Machine$integer.max, TRUE)
+  .check_number(gibbs_burn, "gibbs_burn", 0, .Machine$integer.max, TRUE)
+  .check_number(gibbs_thin, "gibbs_thin", 1, .Machine$integer.max, TRUE)
+  if (gibbs_burn + as.double(m) * gibbs_thin > .Machine$integer.max) {
+    stop("Requested Gibbs chain exceeds the R integer range.", call. = FALSE)
+  }
+  invisible(NULL)
+}
+
 .check_dots <- function(...) {
   dots <- list(...)
   if (length(dots)) stop("Unused argument(s) in ...: ",

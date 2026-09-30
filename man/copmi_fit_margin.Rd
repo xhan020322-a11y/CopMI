@@ -8,8 +8,7 @@ copmi_fit_margin(
   x,
   ind,
   cutoff,
-  candidates = c("norm", "logis", "lnorm", "gamma", "weibull", "exp", "invgauss",
-    "gengamma", "llogis", "lomax", "burr"),
+  candidates = .margin_families(),
   optim_methods = c("L-BFGS-B", "Nelder-Mead")
 )
 }

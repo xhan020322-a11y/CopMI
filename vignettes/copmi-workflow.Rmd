@@ -64,14 +64,16 @@ cutoff is rejected. No complete exposure truth is included in the package.
 
 ```{r full}
 fit <- copula_em_impute(dat, margin_mode = "normal", input_scale = "log",
-                         m = 2, max_iter = 100, seed = 42)
+                         m = 5, max_iter = 100, seed = 42,
+                         gibbs_burn = 200, gibbs_thin = 50)
 summary(fit)
 head(CopMI::complete(fit, 1))
 ```
 
 Inspect `converged`; reaching a chosen iteration limit does not imply
 convergence. The flag means that the maximum absolute change in the correlation
-matrix fell below `tol`. It does not certify a global likelihood optimum.
+matrix fell below `tol` for three consecutive iterations. It does not certify
+a global likelihood optimum.
 
 ## Reproduce the result step by step
 
@@ -85,7 +87,7 @@ latent$z_lod
 model <- copmi_fit_copula(latent, max_iter = 100, seed = 42)
 model$Sigma_hat
 model$em_change_history
-staged <- copmi_impute(model, m = 2)
+staged <- copmi_impute(model, m = 5, gibbs_burn = 200, gibbs_thin = 50)
 stopifnot(identical(CopMI::complete(staged), CopMI::complete(fit)))
 ```
 
@@ -95,9 +97,38 @@ EM. Its default seed continues the stored fitting RNG state; a different integer
 seed requests a new run of the conditional sampler. Explicitly seeded calls
 restore the caller's random-number state.
 
+## Gibbs sweeps and retained draws
+
+The sampler groups rows with the same censoring pattern to share conditional
+matrix calculations. It initializes the censored latent coordinates inside
+their truncation region and then runs one systematic-scan chain. Every sweep
+updates all censored coordinates, using each updated value in subsequent
+coordinate conditionals. The state persists between completed data sets.
+
+`gibbs_burn` is the number of initial sweeps to discard. Retained draw `k` is
+taken at sweep `gibbs_burn + k * gibbs_thin`; the first retained draw is one
+full interval after burn-in. The defaults with `m = 5` retain sweeps
+250, 300, 350, 400, and 450.
+
+```{r sampling}
+sampling <- diagnostics(fit)$sampling
+sampling$completed
+sampling$kept_sweeps
+sampling$total_sweeps
+head(sampling$trace_mean_censored_z)
+head(sampling$trace_mean_abs_update)
+```
+
+The traces summarize the mean censored latent value and mean absolute update
+per sweep. They help inspect the run but are not convergence tests.
+`sampling$completed` records completion, while `converged` describes EM only.
+With no censoring the matrices equal the input, no sweeps run, and traces and
+retained-sweep indices are empty. Conditional covariance failures stop sampling;
+the sampler does not add a ridge or switch to another sampling method.
+
 ## Select heterogeneous margins
 
-The original default candidate set contains 11 families. Here a short candidate
+The default candidate set contains 11 families. Here a short candidate
 list makes the decision table easier to inspect.
 
 ```{r selection}
@@ -113,7 +144,13 @@ with the minimum observed value as the reference if the cutoff is absent. The
 working values equal logged input minus the anchor. Marginal parameters in this
 mode refer to that shifted scale, not the original exposure scale. Positive-support
 selected families imply values above the anchor. Selected normal and logistic
-families retain real support; their values are not forcibly made positive.
+families retain real support; their values may be negative or zero on the
+shifted scale and are not forcibly made positive. Before undoing the shift,
+the inverse transform checks each column using its selected family's support
+and its shifted censoring cutoff. Both groups require finite values below
+that cutoff. No invalid draw is replaced by a constant. Negative returned
+log-analysis values are possible for either group. All families still share
+one copula EM and Gibbs engine.
 
 To inspect one margin independently:
 
@@ -186,8 +223,20 @@ dx$fallback_records
 
 The fallback table distinguishes optimization retries, candidate failures,
 initial-pair optimizer retries and initial-matrix positive-definite projection.
-E-step, sampling, and inverse-transformation failures stop with an error; they
-do not produce approximate or fixed-value replacements. Counts represent events;
+Invalid E-step moments and unresolved sampling or inverse-transformation
+failures stop with an error. No untruncated-moment or Monte Carlo moment
+fallback is used. The moment library may use randomized probability
+integration. Its covariance is symmetrized, checked for positive
+semidefiniteness, and its relative asymmetry is recorded in
+`dx$moment_asymmetry_history`; this is not an integration-error bound.
+EM and Gibbs never add a ridge or use a pseudoinverse.
+
+An invalid positive-support quantile is recovered only by solving the same
+log-CDF equation. A boundary correction is permitted only for equality or
+floating-point-sized overshoot, and moves the value just below the cutoff.
+Nonfinite values and material violations are errors, not fixed-value
+replacements. See `dx$inverse_diagnostics` and `dx$sampling` for counts.
+Counts represent events;
 multiple events can concern the same sample or variable. Empty tables mean no
 events of that type were recorded.
 
@@ -207,8 +256,8 @@ exploratory$converged
 
 The current implementation generates conditional imputations at fixed estimated
 margin parameters and correlation. It does not draw parameter uncertainty or
-family-selection uncertainty. The Gibbs sampler starts inside the truncation region; assess
-sampler mixing, sensitivity, and inferential performance for
+family-selection uncertainty. Assess Gibbs mixing, sensitivity to `gibbs_burn`
+and `gibbs_thin`, and inferential performance for
 your application. `complete(fit, "mean")` is a descriptive average, not an
 analysis that propagates between-imputation uncertainty. Downstream model
 fitting and pooling are outside this package's current scope.

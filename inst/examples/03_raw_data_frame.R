@@ -29,8 +29,10 @@ fit_raw <- copula_em_impute(
   input_scale = "raw",
   margin_mode = "normal",
   optim_methods = c("L-BFGS-B", "Nelder-Mead"),
-  m = 3,
-  seed = 2026
+  m = 5,
+  seed = 2026,
+  gibbs_burn = 200,
+  gibbs_thin = 50
 )
 
 # Output is a completed matrix on the supplied raw scale (ng/L).

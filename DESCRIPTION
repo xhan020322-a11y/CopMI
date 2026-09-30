@@ -2,6 +2,7 @@ Package: CopMI
 Type: Package
 Title: Gaussian Copula EM Multiple Imputation for Left-Censored Exposures
 Version: 0.1.0
+Config/CopMI/Engine: log-tail-systematic-1
 Authors@R: person("Xuan", "Han", email = "1571836967@qq.com",
     role = c("aut", "cre"))
 Description: Fits censored marginal distributions and a latent Gaussian
@@ -11,6 +12,8 @@ Description: Fits censored marginal distributions and a latent Gaussian
     conditional imputation, and diagnostic extraction. Completed matrices are
     returned on the supplied analysis scale with observed values preserved.
 License: MIT + file LICENSE
+URL: https://github.com/xhan020322-a11y/CopMI
+BugReports: https://github.com/xhan020322-a11y/CopMI/issues
 Encoding: UTF-8
 LazyData: true
 Depends: R (>= 4.1.0)

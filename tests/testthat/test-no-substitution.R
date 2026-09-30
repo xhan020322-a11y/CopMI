@@ -15,10 +15,10 @@ test_that("a failed E-step stops instead of substituting untruncated moments", {
   expect_error(copula_em_impute(nhanes_pah, margin_mode = "normal"), "EM iteration.*row.*forced moments failure")
 })
 
-test_that("a failed sample stops instead of returning its fixed starting value", {
+test_that("a failed Gibbs draw stops with its sampling context", {
   model <- copmi_fit_copula(copmi_transform(copmi_fit_margins(nhanes_pah, margin_mode = "normal")))
-  testthat::local_mocked_bindings(.truncated_draw = function(...) stop("forced draw failure"))
-  expect_error(copmi_impute(model, m = 3), "Imputation.*row.*forced draw failure")
+  testthat::local_mocked_bindings(.rnorm_upper_trunc = function(...) stop("forced draw failure"))
+  expect_error(copmi_impute(model, m = 3), "Gibbs initialization.*pattern.*forced draw failure")
 })
 
 test_that("inverse transformation preserves real-support shifted normal tails", {
@@ -39,7 +39,7 @@ test_that("inverse transformation preserves real-support shifted normal tails", 
 
 test_that("invalid inverse values fail rather than becoming LOD replacements", {
   d <- make_lod_data(matrix(c(0, 1, 2), 3, 1), matrix(c(0, 1, 1), 3, 1), 0)
-  for (bad in c(NA_real_, Inf, 0, 1)) {
+  for (bad in c(NA_real_, Inf, 1)) {
     x <- d$X_cens
     x[1] <- bad
     expect_error(.check_completed(d, x), "nonfinite|below its cutoff")

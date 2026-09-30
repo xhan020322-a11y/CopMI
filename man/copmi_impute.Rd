@@ -8,8 +8,8 @@ copmi_impute(
   object,
   m = 5,
   seed = NULL,
-  ag = "gibbs",
-  thinning = 2,
+  gibbs_burn = 200L,
+  gibbs_thin = 50L,
   allow_unconverged = FALSE
 )
 }
@@ -23,11 +23,10 @@ state saved by the fitted model, while restoring the caller's RNG state.
 Repeated calls with the same fit and seed give the same result; use a new
 seed for additional independent runs of the sampler.}
 
-\item{ag}{Sampling algorithm: \code{"gibbs"}, \code{"gibbsR"}, or \code{"rejection"}, passed
-to \code{\link[tmvtnorm:rtmvnorm]{tmvtnorm::rtmvnorm()}}.}
+\item{gibbs_burn}{Nonnegative integer number of initial Gibbs sweeps to discard.}
 
-\item{thinning}{Positive integer number of Gibbs steps per retained draw.
-Ignored by the rejection sampler.}
+\item{gibbs_thin}{Positive integer number of sweeps between retained draws.
+Draw \code{k} is retained at sweep \code{gibbs_burn + k * gibbs_thin}.}
 
 \item{allow_unconverged}{Allow exploratory draws from an unconverged or
 initialization-only fit. Defaults to \code{FALSE}; \code{converged} remains \code{FALSE}.}
@@ -38,7 +37,8 @@ A \code{copmi_mi} object with \code{imp_list} (list of \code{m} numeric matrices
 \code{n_iter}, \code{Sigma_hat}, \code{family_selected}, \code{bic_table}, \code{fallback_records},
 \code{shift_anchor}, \code{model}, \code{call}, and \code{extra}. \code{extra} retains latent draws,
 selected margin parameters, optimization diagnostics, initialization,
-and EM history. Use \code{\link[=complete]{complete()}} and \code{\link[=diagnostics]{diagnostics()}} for stable extraction.
+EM history, \code{inverse_diagnostics}, and \code{sampling} diagnostics. Use \code{\link[=complete]{complete()}} and \code{\link[=diagnostics]{diagnostics()}}
+for stable extraction.
 }
 \description{
 Sample censored latent values conditional on observed values, invert the
@@ -47,10 +47,26 @@ fitted marginal transforms, and return completed data on the input scale.
 \details{
 Observed values and dimension names are preserved. Censored values
 must be finite and strictly below their cutoff. Moment, sampling, or inverse
-transformation failures raise errors; no fixed-value replacement is used. Marginal parameters and
+transformation failures raise errors; no fixed-value replacement is used.
+A failed positive-support quantile can be recovered by solving the same
+log-CDF equation, without changing its probability or drawing again.
+Cutoff equality or overshoot within floating-point tolerance is moved
+just below the cutoff and counted in the numerical diagnostics.
+Before undoing an SD shift, each column is checked against the support
+of its selected family. Normal and logistic values may be negative or
+zero; all other candidates require strictly positive values. Every
+censored value must be below its cutoff on that scale. Returning to
+the log-analysis scale can yield negative values for either group;
+original-scale output requested with \code{input_scale = "raw"} is positive.
+Marginal parameters and
 correlations are held fixed across draws; parameter and family-selection
-uncertainty is not sampled. The Gibbs sampler starts inside the
-truncation region; users should assess mixing and select appropriate thinning.
+uncertainty is not sampled. A systematic-scan Gibbs chain starts inside
+the truncation region and persists across all completed data sets. Each
+sweep updates every censored latent coordinate once. With \code{m = 5} and the
+default controls, retained sweeps are 250, 300, 350, 400, and 450.
+Conditional covariance matrices must be positive definite; no ridge is added.
+Completion of the requested sweeps does not establish sampler convergence;
+assess mixing and sensitivity to the burn-in and retention interval.
 }
 \examples{
 # Use the first 100 rows for a quick help example; full data have 1330 rows.

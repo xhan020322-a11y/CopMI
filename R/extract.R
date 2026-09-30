@@ -56,15 +56,28 @@ complete.copmi_mi <- function(object, action = "all", ...) {
 #'   `Sigma_hat`, `Sigma_init`, `em_change_history`, `family_selected`,
 #'   `bic_table`, `candidate_table`, `optimization`, `fallback_records`,
 #'   `init_diagnostics`, `shift_anchor`, `shift_sd`, `shift_sd_source`,
-#'   `input_scale`, and `sampling`. The fallback table has columns `method`,
+#'   `input_scale`, `sampling`, `inverse_diagnostics`, and
+#'   `moment_asymmetry_history`. The last field records the maximum relative
+#'   asymmetry of the integrated moment covariance per EM iteration; it is
+#'   not an integration-error bound. Numerical diagnostics count quantile
+#'   root solves and floating-point boundary adjustments.
+#'   The fallback table has columns `method`,
 #'   `stage`, `count`, and `detail`; `count` counts events, not necessarily
 #'   distinct rows or variables. Marginal objects return the relevant candidate
 #'   and optimization tables; copula objects return correlation and EM details.
+#'   `sampling` contains `scan`, `burn_in`, `thin`, `completed`, `total_sweeps`,
+#'   `kept_sweeps`, `n_patterns`, `n_rows_with_censoring`, `n_censored_latent`,
+#'   `n_scalar_updates`, `trace_mean_censored_z`, `trace_mean_abs_update`, and
+#'   `seed`. The two traces contain one value per sweep. With no censored cells,
+#'   completed matrices equal the input, the actual sweep count is zero, and
+#'   the retained-sweep vector and traces are empty.
 #' @details A successful Nelder-Mead retry remains visible in `optimization`
 #'   even if the final fit converges. The fallback table records marginal and initial-pair optimizer
 #'   retries, failed marginal candidates, and initial-matrix projection. EM or
 #'   sampling failures raise errors; they do not produce replacement values. Consult the per-attempt `message` and `warnings`
 #'   columns when diagnosing a failed candidate.
+#'   `converged` describes EM convergence. `sampling$completed` only records
+#'   completion of the requested draws, not evidence of Gibbs convergence.
 #' @export
 #' @examples
 #' # Use the first 100 rows for a quick help example; full data have 1330 rows.
@@ -85,19 +98,20 @@ diagnostics.copmi_mi <- function(object, ...) {
   list(converged = object$converged, n_iter = object$n_iter,
     Sigma_hat = object$Sigma_hat, Sigma_init = object$extra$Sigma_init,
     em_change_history = object$extra$em_change_history,
+    moment_asymmetry_history = object$extra$moment_asymmetry_history,
     family_selected = object$family_selected, bic_table = object$bic_table,
     candidate_table = object$extra$candidate_table, optimization = object$extra$optimization,
     fallback_records = object$fallback_records, init_diagnostics = object$extra$init_diagnostics,
     shift_anchor = object$shift_anchor, shift_sd = object$extra$shift_sd,
     shift_sd_source = object$extra$shift_sd_source, input_scale = object$input_scale,
-    sampling = object$extra$sampling)
+    sampling = object$extra$sampling, inverse_diagnostics = object$extra$inverse_diagnostics)
 }
 
 #' @rdname diagnostics
 #' @export
 diagnostics.copmi_copula <- function(object, ...) {
   .check_dots(...)
-  object[c("converged", "n_iter", "Sigma_hat", "Sigma_init", "em_change_history",
+  object[c("converged", "n_iter", "Sigma_hat", "Sigma_init", "em_change_history", "moment_asymmetry_history",
            "init_diagnostics", "fallback_records")]
 }
 

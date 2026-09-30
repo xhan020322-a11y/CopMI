@@ -4,7 +4,8 @@ make_pd_cor <- function(S, project = FALSE) {
   if (!is.matrix(S) || nrow(S) != ncol(S) || any(!is.finite(S)) || any(diag(S) <= 0)) {
     stop("Correlation input must be a finite square matrix with positive diagonal.", call. = FALSE)
   }
-  R <- stats::cov2cor((S + t(S)) / 2)
+  S <- .checked_covariance(S, positive_definite = FALSE)
+  R <- stats::cov2cor(S)
   pd <- tryCatch({ chol(R); TRUE }, error = function(e) FALSE)
   if (pd) return(R)
   if (!project) stop("The EM covariance update is not positive definite.", call. = FALSE)
@@ -13,6 +14,20 @@ make_pd_cor <- function(S, project = FALSE) {
   R <- as.matrix(projected$mat)
   attr(R, "pd_adjustment") <- projected$normF
   R
+}
+
+# Validate symmetry before averaging roundoff; definiteness is checked separately.
+.checked_covariance <- function(S, positive_definite = TRUE) {
+  if (!is.matrix(S) || !nrow(S) || nrow(S) != ncol(S) || any(!is.finite(S))) {
+    stop("Covariance must be a finite square matrix.", call. = FALSE)
+  }
+  tolerance <- 64 * nrow(S) * .Machine$double.eps * max(abs(S))
+  if (max(abs(S - t(S))) > tolerance) {
+    stop("Covariance is not symmetric within floating-point tolerance.", call. = FALSE)
+  }
+  S <- (S + t(S)) / 2
+  if (positive_definite) chol(S)
+  S
 }
 
 lyles_pair_negloglik <- function(par, z1, z2, obs1, obs2, lod1, lod2, rho_max = 1) {

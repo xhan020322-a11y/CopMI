@@ -4,11 +4,14 @@ test_that("staged and one-call pipelines agree in both modes", {
                                   margin_candidates = c("norm", "logis"))
     latent <- copmi_transform(margins)
     model <- copmi_fit_copula(latent, max_iter = 100, seed = 42)
-    staged <- copmi_impute(model, m = 2)
+    staged <- copmi_impute(model, m = 2, gibbs_burn = 3, gibbs_thin = 4)
     direct <- copula_em_impute(nhanes_pah, margin_mode = mode,
-      margin_candidates = c("norm", "logis"), max_iter = 100, m = 2, seed = 42)
+      margin_candidates = c("norm", "logis"), max_iter = 100, m = 2, seed = 42,
+      gibbs_burn = 3, gibbs_thin = 4)
     expect_identical(complete(staged), complete(direct))
     expect_identical(staged$Sigma_hat, direct$Sigma_hat)
+    expect_identical(diagnostics(staged)$sampling, diagnostics(direct)$sampling)
+    expect_identical(diagnostics(staged)$sampling$kept_sweeps, c(7L, 11L))
     expect_s3_class(margins, "copmi_margins")
     expect_s3_class(latent, "copmi_latent")
     expect_s3_class(model, "copmi_copula")

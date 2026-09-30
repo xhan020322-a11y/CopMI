@@ -8,24 +8,40 @@
 #'   state saved by the fitted model, while restoring the caller's RNG state.
 #'   Repeated calls with the same fit and seed give the same result; use a new
 #'   seed for additional independent runs of the sampler.
-#' @param ag Sampling algorithm: `"gibbs"`, `"gibbsR"`, or `"rejection"`, passed
-#'   to [tmvtnorm::rtmvnorm()].
+#' @param gibbs_burn Nonnegative integer number of initial Gibbs sweeps to discard.
+#' @param gibbs_thin Positive integer number of sweeps between retained draws.
+#'   Draw `k` is retained at sweep `gibbs_burn + k * gibbs_thin`.
 #' @param allow_unconverged Allow exploratory draws from an unconverged or
 #'   initialization-only fit. Defaults to `FALSE`; `converged` remains `FALSE`.
-#' @param thinning Positive integer number of Gibbs steps per retained draw.
-#'   Ignored by the rejection sampler.
 #' @return A `copmi_mi` object with `imp_list` (list of `m` numeric matrices),
 #'   `M`, `method`, `is_mi`, `input`, `input_scale`, `margin_mode`, `converged`,
 #'   `n_iter`, `Sigma_hat`, `family_selected`, `bic_table`, `fallback_records`,
 #'   `shift_anchor`, `model`, `call`, and `extra`. `extra` retains latent draws,
 #'   selected margin parameters, optimization diagnostics, initialization,
-#'   and EM history. Use [complete()] and [diagnostics()] for stable extraction.
+#'   EM history, `inverse_diagnostics`, and `sampling` diagnostics. Use [complete()] and [diagnostics()]
+#'   for stable extraction.
 #' @details Observed values and dimension names are preserved. Censored values
 #'   must be finite and strictly below their cutoff. Moment, sampling, or inverse
-#'   transformation failures raise errors; no fixed-value replacement is used. Marginal parameters and
+#'   transformation failures raise errors; no fixed-value replacement is used.
+#'   A failed positive-support quantile can be recovered by solving the same
+#'   log-CDF equation, without changing its probability or drawing again.
+#'   Cutoff equality or overshoot within floating-point tolerance is moved
+#'   just below the cutoff and counted in the numerical diagnostics.
+#'   Before undoing an SD shift, each column is checked against the support
+#'   of its selected family. Normal and logistic values may be negative or
+#'   zero; all other candidates require strictly positive values. Every
+#'   censored value must be below its cutoff on that scale. Returning to
+#'   the log-analysis scale can yield negative values for either group;
+#'   original-scale output requested with `input_scale = "raw"` is positive.
+#'   Marginal parameters and
 #'   correlations are held fixed across draws; parameter and family-selection
-#'   uncertainty is not sampled. The Gibbs sampler starts inside the
-#'   truncation region; users should assess mixing and select appropriate thinning.
+#'   uncertainty is not sampled. A systematic-scan Gibbs chain starts inside
+#'   the truncation region and persists across all completed data sets. Each
+#'   sweep updates every censored latent coordinate once. With `m = 5` and the
+#'   default controls, retained sweeps are 250, 300, 350, 400, and 450.
+#'   Conditional covariance matrices must be positive definite; no ridge is added.
+#'   Completion of the requested sweeps does not establish sampler convergence;
+#'   assess mixing and sensitivity to the burn-in and retention interval.
 #' @seealso [copula_em_impute()], [complete()]
 #' @export
 #' @examples
@@ -37,12 +53,10 @@
 #' result <- copmi_impute(model, m = 2)
 #' dim(complete(result, 1))
 #' summary(result)
-copmi_impute <- function(object, m = 5, seed = NULL, ag = "gibbs", thinning = 2,
+copmi_impute <- function(object, m = 5, seed = NULL, gibbs_burn = 200L, gibbs_thin = 50L,
                          allow_unconverged = FALSE) {
   .check_class(object, "copmi_copula", "object")
-  .check_number(m, "m", 1, .Machine$integer.max, TRUE)
-  .check_number(thinning, "thinning", 1, .Machine$integer.max, TRUE)
-  ag <- match.arg(ag, c("gibbs", "gibbsR", "rejection"))
+  .check_gibbs_control(m, gibbs_burn, gibbs_thin)
   .check_flag(allow_unconverged, "allow_unconverged")
   if (!object$converged && !allow_unconverged) {
     stop("Copula EM has not converged. Refit with more iterations; use allow_unconverged = TRUE only for exploratory draws.", call. = FALSE)
@@ -51,8 +65,11 @@ copmi_impute <- function(object, m = 5, seed = NULL, ag = "gibbs", thinning = 2,
   margins <- latent$margins
   drawn <- .with_rng(seed, state = if (is.null(seed)) object$rng_state else NULL,
     code = .draw_copula_engine(latent$Z, latent$ind, latent$z_lod,
-                               object$Sigma_hat, m, ag, thinning))
+                               object$Sigma_hat, m, gibbs_burn, gibbs_thin))
   imp_list <- lapply(drawn$Z_imp_list, .inverse_latent, margins = margins)
+  inverse_diagnostics <- as.data.frame(do.call(rbind, lapply(imp_list, attr, "numerics")))
+  inverse_diagnostics$imputation <- seq_len(m)
+  imp_list <- lapply(imp_list, function(X) { attr(X, "numerics") <- NULL; X })
   ct <- margins$candidate_table
   ot <- margins$optimization
   retries <- if (nrow(ot)) sum(duplicated(ot[, c("variable", "candidate", "start")])) else 0L
@@ -65,9 +82,11 @@ copmi_impute <- function(object, m = 5, seed = NULL, ag = "gibbs", thinning = 2,
   )
   bic_table <- lapply(margins$fits, `[[`, "candidate_table")
   shift <- margins$shift
+  # 保留同义字段及各层诊断字段，兼容已有的结果提取方式。
   extra <- list(Z_imp_list = drawn$Z_imp_list, Sigma_hat = object$Sigma_hat,
     Sigma_init = object$Sigma_init, init_diagnostics = object$init_diagnostics,
-    em_change_history = object$em_change_history, fallback_records = fallbacks,
+    em_change_history = object$em_change_history,
+    moment_asymmetry_history = object$moment_asymmetry_history, fallback_records = fallbacks,
     n_iter = object$n_iter, converged = object$converged,
     family_hat = margins$family_selected, family_selected = margins$family_selected,
     margin_fits = margins$fits, fit_how = vapply(margins$fits, `[[`, character(1), "how"),
@@ -75,7 +94,8 @@ copmi_impute <- function(object, m = 5, seed = NULL, ag = "gibbs", thinning = 2,
     shift_anchor = shift$anchor, shift_sd = shift$sd, shift_sd_source = shift$sd_source,
     shift_multiplier = shift$shift_multiplier, shifted_cutoffs = shift$shifted_cutoffs,
     original_cutoffs = margins$analysis_data$cutoffs, scale = margins$input_scale,
-    sampling = list(ag = ag, thinning = thinning, seed = seed))
+    inverse_diagnostics = inverse_diagnostics,
+    sampling = c(drawn$sampling, list(seed = seed)))
   structure(list(method = if (margins$margin_mode == "normal") "Copula_EM_normal" else "Copula_EM",
     imp_list = imp_list, M = as.integer(m), is_mi = TRUE, extra = extra,
     call = match.call(), input = margins$input, input_scale = margins$input_scale,
@@ -131,21 +151,18 @@ copmi_impute <- function(object, m = 5, seed = NULL, ag = "gibbs", thinning = 2,
 copula_em_impute <- function(x, ind = NULL, cutoffs = NULL, m = 5,
                              margin_mode = c("sd_shift", "normal"),
                              max_iter = 100, tol = 1e-4, seed = 1, shift_k = 3,
-                             margin_candidates = c("norm", "logis", "lnorm", "gamma",
-                               "weibull", "exp", "invgauss", "gengamma", "llogis", "lomax", "burr"),
-                             ag = "gibbs", thinning = 2, verbose = FALSE,
+                             margin_candidates = .margin_families(),
+                             gibbs_burn = 200L, gibbs_thin = 50L, verbose = FALSE,
                              lyles_control = list(), input_scale = c("log", "raw"),
                              optim_methods = c("L-BFGS-B", "Nelder-Mead"),
-                              allow_unconverged = FALSE, ...) {
+                             allow_unconverged = FALSE, ...) {
   .check_dots(...)
   .check_flag(allow_unconverged, "allow_unconverged")
-  .check_number(m, "m", 1, .Machine$integer.max, TRUE)
+  .check_gibbs_control(m, gibbs_burn, gibbs_thin)
   .check_number(max_iter, "max_iter", 0, .Machine$integer.max, TRUE)
   .check_number(tol, "tol", .Machine$double.eps)
-  .check_number(thinning, "thinning", 1, .Machine$integer.max, TRUE)
   .check_flag(verbose, "verbose")
   if (!is.null(seed)) .check_number(seed, "seed", 0, .Machine$integer.max, TRUE)
-  ag <- match.arg(ag, c("gibbs", "gibbsR", "rejection"))
   lyles_control <- .check_lyles_control(lyles_control)
   if (inherits(x, "copmi_lod_data")) {
     if (!is.null(ind) || !is.null(cutoffs)) {
@@ -159,7 +176,8 @@ copula_em_impute <- function(x, ind = NULL, cutoffs = NULL, m = 5,
   margins <- copmi_fit_margins(dat, .match_margin_mode(margin_mode), match.arg(input_scale),
                               shift_k, margin_candidates, optim_methods)
   model <- copmi_fit_copula(copmi_transform(margins), max_iter, tol, seed, verbose, lyles_control)
-  result <- copmi_impute(model, m, ag = ag, thinning = thinning, allow_unconverged = allow_unconverged)
+  result <- copmi_impute(model, m, gibbs_burn = gibbs_burn, gibbs_thin = gibbs_thin,
+                         allow_unconverged = allow_unconverged)
   result$call <- match.call()
   result
 }

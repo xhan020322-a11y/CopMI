@@ -7,7 +7,8 @@
 #' @param max_iter Nonnegative integer maximum number of EM iterations. Zero
 #'   returns initialization only and sets `converged = FALSE`.
 #' @param tol Positive finite convergence tolerance: the maximum absolute
-#'   elementwise change in the correlation matrix must be smaller than `tol`.
+#'   elementwise change in the correlation matrix must be smaller than `tol`
+#'   for three consecutive iterations.
 #' @param seed Nonnegative integer seed, or `NULL` to use and advance the current
 #'   RNG stream. Explicit seeds restore the caller's RNG state on exit.
 #' @param verbose Whether to print initialization and EM progress.

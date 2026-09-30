@@ -34,9 +34,7 @@
 #' marginal$candidate_table
 #' marginal$optimization
 copmi_fit_margin <- function(x, ind, cutoff,
-                             candidates = c("norm", "logis", "lnorm", "gamma",
-                                            "weibull", "exp", "invgauss", "gengamma",
-                                            "llogis", "lomax", "burr"),
+                             candidates = .margin_families(),
                              optim_methods = c("L-BFGS-B", "Nelder-Mead")) {
   candidates <- .check_candidates(candidates)
   optim_methods <- .check_optim_methods(optim_methods)
@@ -103,6 +101,11 @@ copmi_fit_margin <- function(x, ind, cutoff,
 #'   `analysis_data` (log-scale data), `work_data` (data used for fitting),
 #'   `shift` (`copmi_shift` or `NULL`), `margin_mode`, `input_scale`, and
 #'   `optim_methods`. No copula estimation or random imputation occurs here.
+#' @details Selection fits every candidate to the same shifted data and
+#'   censoring cutoffs. Normal and logistic candidates retain real support;
+#'   other candidates have positive support. The shift makes visible values
+#'   and cutoffs positive but does not impose a positive lower bound on
+#'   normal or logistic draws. BIC selects among all successful candidates.
 #' @seealso [copmi_shift()], [copmi_transform()], [copula_em_impute()]
 #' @export
 #' @examples
@@ -114,8 +117,7 @@ copmi_fit_margin <- function(x, ind, cutoff,
 #' selected$candidate_table
 copmi_fit_margins <- function(x, margin_mode = c("sd_shift", "normal"),
                               input_scale = c("log", "raw"), shift_k = 3,
-                              margin_candidates = c("norm", "logis", "lnorm", "gamma",
-                                "weibull", "exp", "invgauss", "gengamma", "llogis", "lomax", "burr"),
+                              margin_candidates = .margin_families(),
                               optim_methods = c("L-BFGS-B", "Nelder-Mead")) {
   x <- .as_lod_data(x)
   margin_mode <- .match_margin_mode(margin_mode)

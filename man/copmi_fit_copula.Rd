@@ -20,7 +20,8 @@ copmi_fit_copula(
 returns initialization only and sets \code{converged = FALSE}.}
 
 \item{tol}{Positive finite convergence tolerance: the maximum absolute
-elementwise change in the correlation matrix must be smaller than \code{tol}.}
+elementwise change in the correlation matrix must be smaller than \code{tol}
+for three consecutive iterations.}
 
 \item{seed}{Nonnegative integer seed, or \code{NULL} to use and advance the current
 RNG stream. Explicit seeds restore the caller's RNG state on exit.}

@@ -31,7 +31,8 @@ test_that("unsupported parameters and unidentifiable margins fail early", {
   }
   expect_error(copula_em_impute(d, max_iter = -1), "max_iter")
   expect_error(copula_em_impute(d, tol = 0), "tol")
-  expect_error(copula_em_impute(d, thinning = 0), "thinning")
+  expect_error(copula_em_impute(d, gibbs_thin = 0), "gibbs_thin")
+  expect_error(copula_em_impute(d, gibbs_burn = -1), "gibbs_burn")
   expect_error(copula_em_impute(d, seeds = 10), "Unused")
   expect_error(copula_em_impute(d, ind = d$ind), "again")
   expect_error(copula_em_impute(d, lyles_control = list(max_it = 5)), "lyles_control")

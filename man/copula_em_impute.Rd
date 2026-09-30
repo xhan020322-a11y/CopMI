@@ -14,10 +14,9 @@ copula_em_impute(
   tol = 1e-04,
   seed = 1,
   shift_k = 3,
-  margin_candidates = c("norm", "logis", "lnorm", "gamma", "weibull", "exp", "invgauss",
-    "gengamma", "llogis", "lomax", "burr"),
-  ag = "gibbs",
-  thinning = 2,
+  margin_candidates = .margin_families(),
+  gibbs_burn = 200L,
+  gibbs_thin = 50L,
   verbose = FALSE,
   lyles_control = list(),
   input_scale = c("log", "raw"),
@@ -43,7 +42,8 @@ user-specified modelling assumption, not an automatic normality test.}
 returns initialization only and sets \code{converged = FALSE}.}
 
 \item{tol}{Positive finite convergence tolerance: the maximum absolute
-elementwise change in the correlation matrix must be smaller than \code{tol}.}
+elementwise change in the correlation matrix must be smaller than \code{tol}
+for three consecutive iterations.}
 
 \item{seed}{Nonnegative integer seed, or \code{NULL} to use and advance the current
 RNG stream. Explicit seeds restore the caller's RNG state on exit.}
@@ -53,11 +53,10 @@ RNG stream. Explicit seeds restore the caller's RNG state on exit.}
 \item{margin_candidates}{Candidate family names, used only for selection.
 See \code{\link[=copmi_fit_margin]{copmi_fit_margin()}}. In normal mode the sole candidate is \code{norm}.}
 
-\item{ag}{Sampling algorithm: \code{"gibbs"}, \code{"gibbsR"}, or \code{"rejection"}, passed
-to \code{\link[tmvtnorm:rtmvnorm]{tmvtnorm::rtmvnorm()}}.}
+\item{gibbs_burn}{Nonnegative integer number of initial Gibbs sweeps to discard.}
 
-\item{thinning}{Positive integer number of Gibbs steps per retained draw.
-Ignored by the rejection sampler.}
+\item{gibbs_thin}{Positive integer number of sweeps between retained draws.
+Draw \code{k} is retained at sweep \code{gibbs_burn + k * gibbs_thin}.}
 
 \item{verbose}{Whether to print initialization and EM progress.}
 

@@ -9,8 +9,7 @@ copmi_fit_margins(
   margin_mode = c("sd_shift", "normal"),
   input_scale = c("log", "raw"),
   shift_k = 3,
-  margin_candidates = c("norm", "logis", "lnorm", "gamma", "weibull", "exp", "invgauss",
-    "gengamma", "llogis", "lomax", "burr"),
+  margin_candidates = .margin_families(),
   optim_methods = c("L-BFGS-B", "Nelder-Mead")
 )
 }
@@ -50,6 +49,13 @@ Separately choose the supplied data scale and the marginal assumption.
 \code{margin_mode = "normal"} fits censored normal margins on the log scale.
 \code{margin_mode = "sd_shift"} shifts log-scale values and selects a margin for
 each column by BIC. The alias \code{"select"} is also accepted for the latter.
+}
+\details{
+Selection fits every candidate to the same shifted data and
+censoring cutoffs. Normal and logistic candidates retain real support;
+other candidates have positive support. The shift makes visible values
+and cutoffs positive but does not impose a positive lower bound on
+normal or logistic draws. BIC selects among all successful candidates.
 }
 \examples{
 margins <- copmi_fit_margins(nhanes_pah, margin_mode = "normal")
