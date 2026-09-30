@@ -15,12 +15,9 @@ Requires R 4.1.0 or later. Missing dependencies are installed automatically.
 
 ```r
 install.packages("remotes")  # Run once if needed
-remotes::install_github("xhan020322-a11y/CopMI", ref = "v0.1.0",
+remotes::install_github("xhan020322-a11y/CopMI", ref = "main",
                         upgrade = "never")
 ```
-
-A source installation archive is also available on the
-[release page](https://github.com/xhan020322-a11y/CopMI/releases/tag/v0.1.0).
 
 ## Quick example
 
