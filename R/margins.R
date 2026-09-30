@@ -12,8 +12,7 @@
 #'   `"L-BFGS-B"`, then `"Nelder-Mead"` on error, nonconvergence, or invalid
 #'   estimates/log-likelihood/BIC. Both optimize the same left-censored
 #'   likelihood on log-transformed positive parameters, without empirical
-#'   parameter bounds. Location parameters remain unconstrained. A single
-#'   method can be supplied for controlled comparisons.
+#'   parameter bounds. Location parameters remain unconstrained.
 #' @return A `copmi_margin` list containing `family`, `parameters` (named numeric
 #'   vector), `bic`, `loglik`, `optimizer`, `how`, `candidate_table` (one row per
 #'   candidate, including failure messages), and `optimization` (one row per
