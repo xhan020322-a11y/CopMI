@@ -120,11 +120,10 @@ head(sampling$trace_mean_abs_update)
 ```
 
 The traces summarize the mean censored latent value and mean absolute update
-per sweep. They help inspect the run but are not convergence tests.
+per sweep. 
 `sampling$completed` records completion, while `converged` describes EM only.
 With no censoring the matrices equal the input, no sweeps run, and traces and
-retained-sweep indices are empty. Conditional covariance failures stop sampling;
-the sampler does not add a ridge or switch to another sampling method.
+retained-sweep indices are empty. Conditional covariance failures stop sampling.
 
 ## Select heterogeneous margins
 
@@ -148,9 +147,7 @@ families retain real support; their values may be negative or zero on the
 shifted scale and are not forcibly made positive. Before undoing the shift,
 the inverse transform checks each column using its selected family's support
 and its shifted censoring cutoff. Both groups require finite values below
-that cutoff. No invalid draw is replaced by a constant. Negative returned
-log-analysis values are possible for either group. All families still share
-one copula EM and Gibbs engine.
+that cutoff.All families still share one copula EM and Gibbs engine.
 
 To inspect one margin independently:
 
@@ -224,18 +221,15 @@ dx$fallback_records
 The fallback table distinguishes optimization retries, candidate failures,
 initial-pair optimizer retries and initial-matrix positive-definite projection.
 Invalid E-step moments and unresolved sampling or inverse-transformation
-failures stop with an error. No untruncated-moment or Monte Carlo moment
-fallback is used. The moment library may use randomized probability
+failures stop with an error.The moment library may use randomized probability
 integration. Its covariance is symmetrized, checked for positive
 semidefiniteness, and its relative asymmetry is recorded in
 `dx$moment_asymmetry_history`; this is not an integration-error bound.
-EM and Gibbs never add a ridge or use a pseudoinverse.
 
 An invalid positive-support quantile is recovered only by solving the same
 log-CDF equation. A boundary correction is permitted only for equality or
 floating-point-sized overshoot, and moves the value just below the cutoff.
-Nonfinite values and material violations are errors, not fixed-value
-replacements. See `dx$inverse_diagnostics` and `dx$sampling` for counts.
+Nonfinite values and material violations are errors. See `dx$inverse_diagnostics` and `dx$sampling` for counts.
 Counts represent events;
 multiple events can concern the same sample or variable. Empty tables mean no
 events of that type were recorded.
@@ -251,19 +245,3 @@ initial <- copmi_fit_copula(latent, max_iter = 0, seed = 42)
 exploratory <- copmi_impute(initial, m = 1, allow_unconverged = TRUE)
 exploratory$converged
 ```
-
-## Interpretation and development
-
-The current implementation generates conditional imputations at fixed estimated
-margin parameters and correlation. It does not draw parameter uncertainty or
-family-selection uncertainty. Assess Gibbs mixing, sensitivity to `gibbs_burn`
-and `gibbs_thin`, and inferential performance for
-your application. `complete(fit, "mean")` is a descriptive average, not an
-analysis that propagates between-imputation uncertainty. Downstream model
-fitting and pooling are outside this package's current scope.
-
-Run `?copula_em_impute` or `?copmi_fit_margin` for complete contracts. All public
-functions include executable examples. The source has separate validation,
-marginal-fitting, transformation, EM, sampling, and extraction modules. Run
-`roxygen2::roxygenise()`, `testthat::test_local()`, `R CMD build`, and
-`R CMD check --as-cran` when changing it.
