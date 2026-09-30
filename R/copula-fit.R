@@ -2,7 +2,6 @@
 #'
 #' Estimate pairwise censored-normal correlations for initialization, then
 #' update the latent correlation matrix by EM using truncated-normal moments.
-#' This step estimates the correlation model without drawing completed data.
 #' @param object A `copmi_latent` object from [copmi_transform()].
 #' @param max_iter Nonnegative integer maximum number of EM iterations. Zero
 #'   returns initialization only and sets `converged = FALSE`.
@@ -22,13 +21,6 @@
 #'   (including the per-pair table), `fallback_records`, `latent` (the supplied
 #'   object), `rng_state` (state after estimation for reproducible draws),
 #'   `seed`, `max_iter`, `tol`, and `lyles_control`.
-#' @details Convergence refers only to the correlation-change criterion, not
-#'   convergence of the marginal optimizers or proof of a global optimum.
-#'   An indefinite finite pairwise initial matrix is projected with
-#'   [Matrix::nearPD()]; its adjustment is recorded as `init_diagnostics$pd_adjustment`.
-#'   EM updates are not projected. Moment or linear-algebra failures raise errors
-#'   rather than replacing moments or adding a ridge. Unconverged fits can be
-#'   inspected but require explicit opt-in before imputation.
 #' @seealso [copmi_impute()], [diagnostics()]
 #' @export
 #' @examples
