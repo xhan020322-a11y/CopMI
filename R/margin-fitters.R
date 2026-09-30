@@ -1,5 +1,4 @@
 # Family-specific initialization only. The likelihood and optimizer are shared.
-# A positive family rejects incompatible observations instead of clipping them.
 .margin_starts <- function(obs, cutoff, has_censored, family) {
   if (length(obs) < 2L) stop("At least two observed values are required.", call. = FALSE)
   if (.distribution(family)$positive &&
