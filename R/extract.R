@@ -7,10 +7,6 @@
 #'   matrices; for `"mean"`, an `n` by `p` elementwise average; for `"long"`,
 #'   a data frame with `n * m` rows and columns `.imp` (1 through `m`), `.id`
 #'   (original row number), then the exposure variables in their original order.
-#' @details The mean completion is a descriptive convenience. An analysis of
-#'   this average does not propagate between-imputation uncertainty. CopMI does
-#'   not pool downstream model estimates or standard errors. Use
-#'   `CopMI::complete()` if another package defines a function named `complete`.
 #' @export
 #' @examples
 #' # Use the first 100 rows for a quick help example; full data have 1330 rows.
@@ -71,13 +67,6 @@ complete.copmi_mi <- function(object, action = "all", ...) {
 #'   `seed`. The two traces contain one value per sweep. With no censored cells,
 #'   completed matrices equal the input, the actual sweep count is zero, and
 #'   the retained-sweep vector and traces are empty.
-#' @details A successful Nelder-Mead retry remains visible in `optimization`
-#'   even if the final fit converges. The fallback table records marginal and initial-pair optimizer
-#'   retries, failed marginal candidates, and initial-matrix projection. EM or
-#'   sampling failures raise errors; they do not produce replacement values. Consult the per-attempt `message` and `warnings`
-#'   columns when diagnosing a failed candidate.
-#'   `converged` describes EM convergence. `sampling$completed` only records
-#'   completion of the requested draws, not evidence of Gibbs convergence.
 #' @export
 #' @examples
 #' # Use the first 100 rows for a quick help example; full data have 1330 rows.
