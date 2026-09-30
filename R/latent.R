@@ -6,7 +6,7 @@
 #'   `ind` (observation indicators), `z_lod` (latent cutoffs; `Inf` for absent
 #'   cutoffs), and `margins` (the supplied fitted margins). Dimensions and names
 #'   match the input data. Censored entries in `Z` are cutoff placeholders,
-#'   not observations. Both probability tails are evaluated on the log scale; no probability clipping is used.
+#'   not observations. Both probability tails are evaluated on the log scale.
 #' @seealso [copmi_fit_copula()]
 #' @export
 #' @examples
